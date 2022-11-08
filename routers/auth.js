@@ -25,12 +25,18 @@ router.get('/users/:uname', async (req,res) => {
 
 router.post('/users/signup', async (req,res) => {
     const {username, password} = req.body;
-
+    // use regEx for verification
     if(password.length < 6) {
         return res.status(400).send("Password too short!!");
     }
 
-    const encryptedPassword = await bcrypt.hash(password,10);
+    const userExist = await User.findOne({username});
+    if(userExist) {
+        return res.send("User already exists. Please login.");
+    }
+
+    const salt = await bcrypt.genSalt();
+    const encryptedPassword = await bcrypt.hash(password,salt);
     const user = await User.create({username,password : encryptedPassword})
     const maxAge = 3*60*60;
 
@@ -68,35 +74,37 @@ router.post('/users/login', async (req,res) => {
     if(!username || !password) {
        return res.status(400).send("Username or password not found!!");
     }
-
-    const userExist = await User.findOne({ username,password });
+    const userExist = await User.findOne({ username: username });
     if(!userExist) {
        return res.status(401).send("User does not exist");
     }
-
     
-    if(bcrypt.compare(password, userExist.password)) {
-        const maxAge = 3*60*60;
-        const token = jwt.sign (
-            {
-                id: userExist._id,
-                username
-            },
-
-            jwtSecret,
-            {
-                expiresIn: maxAge
-            }
-        );
-
-        userExist.token = token;
-
-        res.status(200).json( {
-            message: 'User logged in',
-            userExist
-        });
+    else if (await bcrypt.compare(password, userExist.password) ==  false) {
+        return res.status(401).send("Incorrect password entered");
     }
-        
+
+    // console.log(bcrypt.compare(password, userExist.password));
+    // console.log(userExist.password);
+
+    const maxAge = 3*60*60;
+    const token = jwt.sign (
+        {
+            id: userExist._id,
+            username
+        },
+
+        jwtSecret,
+        {
+            expiresIn: maxAge
+        }
+    );
+
+    userExist.token = token;
+
+    res.status(200).json( {
+        message: 'User logged in',
+        userExist
+    });
 });
 
 
