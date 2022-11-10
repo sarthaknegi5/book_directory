@@ -139,16 +139,13 @@ router.post('/refresh', async(req,res) => {
 
             else {
 
-                // console.log(decoded.id);
-                // console.log(user);
-
                 const accessToken = jwt.sign(
                     {
                         id : user._id
                     },
                     process.env.ACCESS_TOKEN_SECRET,
                     {
-                        expiresIn : '10m'
+                        expiresIn : '15s'
                     }
                 );
 
@@ -202,7 +199,7 @@ router.delete('/users/:uname', async(req,res) => {
         return res.status(400).send("User not found");
     }
 
-    await User.deleteOne({usernmae: uname});
+    await User.deleteOne({username: uname});
     res.status(200).json({
         message: "User deleted successfully!!",
         userExist

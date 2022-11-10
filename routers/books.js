@@ -3,7 +3,6 @@ const bookModel = require('../model/book_model');
 
 router.get('/books', async (req,res) =>  {
     const bookList = await bookModel.find();
-    console.log(bookList);
     res.send(bookList);
 });
 
@@ -72,8 +71,10 @@ router.delete('/books/:id', async(req,res) => {
     }
 
     await bookModel.deleteOne({isbn: id}).then(() => {
+
         console.log("Product deleted");
         res.send("Book record deleted!!");
+
     }).catch((error) => {
         console.log(error);
     });

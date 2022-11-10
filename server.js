@@ -18,4 +18,7 @@ app.post('/welcome', userAuth, (req,res) =>  {
     res.status(200).send("Welcome");
 });
 
-app.listen(process.env.PORT, () => console.log(`App listening on port ${process.env.PORT}`));
+app.get('/', (req, res)=>{
+    res.send('Welcome to my Book Shop REST API SERVER')
+})
+app.listen(process.env.PORT, '10.0.0.25', () => console.log(`App listening on port ${process.env.PORT}`));
