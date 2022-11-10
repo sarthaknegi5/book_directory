@@ -1,7 +1,6 @@
 const mongoose= require('mongoose');
+const dotenv = require('dotenv').config();
 
-const uri= "mongodb://localhost:27017/booksDB";
-
-const connection = mongoose.createConnection(uri);
+const connection = mongoose.createConnection(process.env.URI);
 
 module.exports = connection;

@@ -1,15 +1,16 @@
 const jwt = require('jsonwebtoken');
-const jwtSecret = '6b983ad6f9b8d990490e5a4bf6150ee9314a2a4b5248d73777ae94012d533b3ae52875';
+const dotenv = require('dotenv').config();
 
 const verifyToken = (req,res,next) => {
-    const token = req.body.token || req.query.token || req.headers["x-access-token"];
+    const accessToken = req.headers["authorization"];
+    const token = accessToken.split(' ')[1];
 
     if(!token) {
         res.status(403).send("A token is required for authorization");
     }
 
     try {
-        const decoded = jwt.verify(token, jwtSecret);
+        const decoded = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET);
         req.user = decoded;
     }
 

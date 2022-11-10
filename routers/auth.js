@@ -2,8 +2,8 @@ const router = require('express').Router();
 const User = require('../model/user');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-
-const jwtSecret = '6b983ad6f9b8d990490e5a4bf6150ee9314a2a4b5248d73777ae94012d533b3ae52875';
+const dotenv = require('dotenv').config();
+ 
 
 
 router.get('/users', async (req,res) => {
@@ -32,32 +32,27 @@ router.post('/users/signup', async (req,res) => {
 
     const userExist = await User.findOne({username});
     if(userExist) {
-        return res.send("User already exists. Please login.");
+        return res.status(400).json({
+            statusCode: 400 ,
+            statusMessage:"User already exists. Please login."
+        });
     }
 
     const salt = await bcrypt.genSalt();
     const encryptedPassword = await bcrypt.hash(password,salt);
-    const user = await User.create({username,password : encryptedPassword})
-    const maxAge = 3*60*60;
+    const user = await User.create({username , password : encryptedPassword})
 
     const token = jwt.sign (
         {
             id: user._id,
-            username
         },
 
-        jwtSecret,
+        process.env.ACCESS_TOKEN_SECRET,
 
         {
-            expiresIn: maxAge
+            expiresIn: '10m'
         }
     );
-
-            // res.cookie('jwt', token, {
-            //     httpOnly: true,
-            //     maxAge : maxAge * 1000
-            // });
-            //user.save();
 
     user.token = token;
     
@@ -83,28 +78,90 @@ router.post('/users/login', async (req,res) => {
         return res.status(401).send("Incorrect password entered");
     }
 
-    // console.log(bcrypt.compare(password, userExist.password));
-    // console.log(userExist.password);
-
-    const maxAge = 3*60*60;
-    const token = jwt.sign (
+    const accessToken = jwt.sign (
         {
             id: userExist._id,
-            username
         },
 
-        jwtSecret,
+        process.env.ACCESS_TOKEN_SECRET,
         {
-            expiresIn: maxAge
+            expiresIn: '10m'
         }
     );
 
-    userExist.token = token;
+    const refreshToken = jwt.sign (
+        {
+            id: userExist._id,
+        },
+
+        process.env.REFRESH_TOKEN_SECRET,
+        {
+            expiresIn: '1d'
+        }
+    );
+
+    res.cookie('jwt', refreshToken, {
+            httpOnly: true,
+            sameSite: 'None',
+            maxAge : 24 * 60 * 60 * 1000
+        });
+
+    userExist.save();
+    //userExist.accessToken = accessToken;
 
     res.status(200).json( {
         message: 'User logged in',
-        userExist
+        username,
+        accessToken,
+        refreshToken
     });
+
+
+
+});
+
+
+router.post('/refresh', async(req,res) => {
+    
+    if(req.cookies?.jwt) {
+        const refreshToken = req.cookies.jwt;
+        const { username } = req.body;
+
+        const user = await User.findOne({username : username});
+
+        const decoded = jwt.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET);
+        // console.log(decoded);
+
+        jwt.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET, async (err,decoded) => {
+            if(err) {
+                return res.status(401).send("Not authorized!!");
+            }
+
+            else {
+
+                // console.log(decoded.id);
+                // console.log(user);
+
+                const accessToken = jwt.sign(
+                    {
+                        id : user._id
+                    },
+                    process.env.ACCESS_TOKEN_SECRET,
+                    {
+                        expiresIn : '10m'
+                    }
+                );
+
+                
+
+                return res.json({accessToken});
+            }
+        });
+    }
+
+    else {
+        res.status(401).json("No refresh token available!");
+    }
 });
 
 
