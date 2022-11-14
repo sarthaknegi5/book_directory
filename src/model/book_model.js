@@ -1,5 +1,5 @@
 const mongoose = require('mongoose');
-const db = require('../config/db');
+const db = require('../../config/db');
 
 const bookSchema = new mongoose.Schema ({
     title: {

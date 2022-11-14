@@ -6,7 +6,10 @@ const verifyToken = (req,res,next) => {
     const token = accessToken.split(' ')[1];
 
     if(!token) {
-        res.status(403).send("A token is required for authorization");
+        res.status(403).json ( {
+            statusCode : 403,
+            statusMessage : 'A token is required for authorization'
+        });
     }
 
     try {
@@ -15,7 +18,10 @@ const verifyToken = (req,res,next) => {
     }
 
     catch(err) {
-        res.status(401).send("Invalid token");
+        res.status(401).json( {
+            statusCode: 401,
+            statusMessage: 'Invalid token'
+        });
     }
 
     return next();
